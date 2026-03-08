@@ -14,7 +14,7 @@ from utils.logger import logger
 
 # The base URL of our own API, used by the background task to hit the webhook.
 # If running in Docker, it should be the service name or localhost.
-LOCAL_API_URL = os.getenv("API_URL", "http://localhost:8000")
+LOCAL_API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 async def create_payment_link(booking_id: str, amount: float, method: str) -> str:
     """

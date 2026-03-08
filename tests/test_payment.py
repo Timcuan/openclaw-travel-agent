@@ -109,8 +109,12 @@ async def test_payment_gateway_mock(clean_in_memory_bookings):
             order["ticket_code"] = pnr
 
     api.payment_hook.issue_ticket = mock_issue
-        
-    res = await payment_webhook(payload, MockRequest())
+    class MockBackgroundTasks:
+        def add_task(self, func, *args, **kwargs):
+            import asyncio
+            asyncio.create_task(func(*args, **kwargs))
+
+    res = await payment_webhook(payload, MockRequest(), MockBackgroundTasks())
     assert res["status"] == "ok"
     
     api.payment_hook.issue_ticket = original_issue

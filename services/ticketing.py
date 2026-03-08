@@ -33,11 +33,16 @@ async def issue_ticket(booking_id: str):
         from sqlalchemy import select
         from sqlalchemy.orm import joinedload
         
-        stmt = select(Booking).options(joinedload(Booking.user)).where(Booking.id == booking_id)
+        stmt = select(Booking).options(joinedload(Booking.user)).where(Booking.id == booking_id).with_for_update()
         result = await session.execute(stmt)
         booking = result.scalar_one_or_none()
 
         if booking:
+            # Idempotency check:
+            if booking.status == BookingStatus.issued:
+                logger.info(f"[Ticketing] Booking {booking_id} already issued, skipping.")
+                return
+                
             booking.status = BookingStatus.issued
             
             ticket = Ticket(
@@ -93,25 +98,38 @@ async def issue_ticket(booking_id: str):
 
     msg = _build_eticket(pnr_code, travel_type, offer, passenger)
     
-    # 3. Send Notification via Telegram
+    # 3. Send Notification via Telegram with Resiliency
     if platform == "telegram" and platform_user_id:
         import httpx
+        import asyncio
         token = os.getenv("TELEGRAM_BOT_TOKEN")
         if token:
-            try:
-                async with httpx.AsyncClient() as client:
-                    await client.post(
-                        f"https://api.telegram.org/bot{token}/sendMessage",
-                        json={
-                            "chat_id": platform_user_id,
-                            "text": msg,
-                            "parse_mode": "Markdown",
-                            "disable_web_page_preview": True,
-                        },
-                    )
-                logger.info(f"[Ticketing] E-Ticket {pnr_code} sent to {platform_user_id}")
-            except Exception as e:
-                logger.error(f"[Ticketing] Failed to send Telegram message: {e}")
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    async with httpx.AsyncClient() as client:
+                        resp = await client.post(
+                            f"https://api.telegram.org/bot{token}/sendMessage",
+                            json={
+                                "chat_id": platform_user_id,
+                                "text": msg,
+                                "parse_mode": "Markdown",
+                                "disable_web_page_preview": True,
+                            },
+                            timeout=10.0
+                        )
+                        if resp.status_code == 200:
+                            logger.info(f"[Ticketing] E-Ticket {pnr_code} sent to {platform_user_id}")
+                            break
+                        else:
+                            logger.warning(f"[Ticketing] Telegram API error {resp.status_code}: {resp.text}")
+                except Exception as e:
+                    logger.error(f"[Ticketing] Failed to send Telegram message (Attempt {attempt+1}/{max_retries}): {e}")
+                
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s
+            else:
+                logger.error(f"[Ticketing] Exhausted all retries. Failed to deliver E-Ticket {pnr_code} to {platform_user_id}")
     else:
         logger.info(f"[Ticketing] (No Telegram ID found to send ticket directly, likely OpenClaw local user)")
 

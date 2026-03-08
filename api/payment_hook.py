@@ -7,7 +7,7 @@ Updates booking status and triggers ticket issuance.
 
 File: api/payment_hook.py
 """
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 from utils.logger import logger
 from services.ticketing import issue_ticket
@@ -23,9 +23,10 @@ class WebhookPayload(BaseModel):
 
 
 @router.post("/webhook")
-async def payment_webhook(payload: WebhookPayload, request: Request):
+async def payment_webhook(payload: WebhookPayload, request: Request, background_tasks: BackgroundTasks):
     """
     Webhook receiver for payment confirmations.
+    Includes idempotency checks and DB row-level locking.
     """
     logger.info(f"[PaymentWebhook] Received {payload.status} for {payload.booking_id}")
 
@@ -43,11 +44,17 @@ async def payment_webhook(payload: WebhookPayload, request: Request):
     # Try DB first
     try:
         async with AsyncSessionLocal() as session:
-            stmt = select(Booking).where(Booking.id == payload.booking_id)
+            # with_for_update() locks the row to prevent race conditions during concurrent webhooks
+            stmt = select(Booking).where(Booking.id == payload.booking_id).with_for_update()
             result = await session.execute(stmt)
             booking = result.scalar_one_or_none()
             
             if booking:
+                # Idempotency check: if already paid or issued, ignore
+                if booking.status in (BookingStatus.paid, BookingStatus.issued):
+                    logger.info(f"[PaymentWebhook] Booking {payload.booking_id} already {booking.status}, ignoring webhook.")
+                    return {"status": "ok", "message": "Already processed"}
+                    
                 booking.status = BookingStatus.paid
                 await session.commit()
                 updated = True
@@ -67,8 +74,7 @@ async def payment_webhook(payload: WebhookPayload, request: Request):
         logger.warning(f"[PaymentWebhook] Booking {payload.booking_id} not found in DB or memory")
         raise HTTPException(status_code=404, detail="Booking not found")
 
-    # 2. Issue the ticket and notify user
-    import asyncio
-    asyncio.create_task(issue_ticket(payload.booking_id))
+    # 2. Issue the ticket and notify user gracefully
+    background_tasks.add_task(issue_ticket, payload.booking_id)
 
     return {"status": "ok", "message": "Payment confirmed, ticketing started"}
