@@ -59,19 +59,36 @@ async def test_payment_gateway_mock(clean_in_memory_bookings):
     
     booking_id = order["booking_id"]
     
-    # 2. To test the async webhook without actually waiting 10s and needing a live server,
-    # we manually call the webhook endpoint function
-    from api.payment_hook import payment_webhook, WebhookPayload
+    # 2. To test the async webhook we manually call the webhook endpoint function
+    from api.payment_hook import payment_webhook, MidtransWebhookPayload
     
-    payload = WebhookPayload(
-        booking_id=booking_id,
-        amount_paid=500000.0,
-        method="BCA",
-        status="success",
-        mock_transaction_id="TRX-1234"
+    # Mock the SHA512 signature
+    import hashlib
+    import os
+    server_key = "test_key"
+    os.environ["MIDTRANS_SERVER_KEY"] = server_key
+    order_id = booking_id
+    status_code = "200"
+    gross_amount = "500000.00"
+    payload_str = f"{order_id}{status_code}{gross_amount}{server_key}"
+    sig = hashlib.sha512(payload_str.encode('utf-8')).hexdigest()
+    
+    payload = MidtransWebhookPayload(
+        transaction_time="2023-01-01 10:00:00",
+        transaction_status="settlement",
+        transaction_id="TRX-1234",
+        status_message="Success, transaction is found",
+        status_code=status_code,
+        signature_key=sig,
+        payment_type="bank_transfer",
+        order_id=order_id,
+        merchant_id="M123",
+        gross_amount=gross_amount,
+        fraud_status="accept",
+        currency="IDR"
     )
     
-    assert payload.mock_transaction_id == "TRX-1234"
+    assert payload.transaction_id == "TRX-1234"
     
     # Mute actual DB functions on booking_manager
     import services.booking_manager
