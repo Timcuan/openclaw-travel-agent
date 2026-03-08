@@ -31,6 +31,8 @@ class TravelType(str, enum.Enum):
 
 class BookingStatus(str, enum.Enum):
     pending = "pending"
+    paid = "paid"
+    issued = "issued"
     confirmed = "confirmed"
     cancelled = "cancelled"
     failed = "failed"
@@ -113,6 +115,7 @@ class Booking(Base):
     # Pricing
     price = Column(Float, nullable=True)
     currency = Column(String(8), default="IDR")
+    payment_url = Column(String(512), nullable=True)
 
     # Raw offer snapshot from provider
     offer_snapshot = Column(JSON, nullable=True)

@@ -25,6 +25,7 @@ from database.db import init_db
 from cache.redis_pool import close_pool as close_redis
 from agent.openclaw_agent import handle_message
 from api.openclaw_hook import router as openclaw_router
+from api.payment_hook import router as payment_router
 from utils.logger import logger
 
 
@@ -50,6 +51,8 @@ app = FastAPI(
 
 # Mount OpenClaw skill router
 app.include_router(openclaw_router)
+# Mount Payment Webhook router
+app.include_router(payment_router)
 
 
 # ─── Schemas ──────────────────────────────────────────────────────────────────

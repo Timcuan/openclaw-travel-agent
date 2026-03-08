@@ -57,9 +57,19 @@ async def create_booking(
         "price": price,
         "currency": "IDR",
         "offer": offer,
+        "payment_url": None, # Will be filled by gateway
         "created_at": datetime.utcnow().isoformat(),
         "expires_at": None,
     }
+
+    # 2. Call Payment Gateway
+    from services.payment_gateway import create_payment_link
+    try:
+        payment_url = await create_payment_link(booking_id, price, payment_method)
+        order["payment_url"] = payment_url
+    except Exception as e:
+        logger.error(f"[BookingManager] Failed to create payment link: {e}")
+        payment_url = None
 
     # DB persistence (async, non-blocking – skip if DB unavailable)
     try:
@@ -97,10 +107,12 @@ def format_order_confirmation(order: dict) -> str:
     travel_type = order.get("travel_type", "")
     price_str = format_price(order.get("price", 0))
     booking_id = order.get("booking_id", "?")
-    name = order.get("passenger_name", "")
     payment = order.get("payment_method", "")
+    payment_url = order.get("payment_url")
 
     offer_line = _offer_one_liner(travel_type, offer)
+    
+    link_line = f"\n🔗 *Bayar Sekarang:* [Klik di sini]({payment_url})\n" if payment_url else ""
 
     return (
         "🎉 *Pesanan Berhasil Dibuat!*\n\n"
@@ -108,9 +120,11 @@ def format_order_confirmation(order: dict) -> str:
         f"{offer_line}\n"
         f"👤 Nama: *{name}*\n"
         f"💳 Pembayaran: *{payment}*\n"
-        f"💰 Total: *{price_str}*\n\n"
+        f"💰 Total: *{price_str}*\n"
+        f"{link_line}\n"
         "⏳ Selesaikan pembayaran dalam *30 menit*.\n"
-        "Konfirmasi akan dikirim via pesan ini. 🙏\n\n"
+        "_(Simulasi: Sistem akan otomatis mengkonfirmasi pembayaran ini dalam 10 detik)_ \n\n"
+        "E-Ticket akan dikirim setelah pembayaran dikonfirmasi. 🙏\n"
         "_Ketik pencarian baru untuk mulai lagi._"
     )
 
@@ -165,6 +179,7 @@ async def _persist_to_db(order: dict):
             check_out=order["offer"].get("check_out"),
             price=order["price"],
             currency="IDR",
+            payment_url=order.get("payment_url"),
             offer_snapshot=order["offer"],
         )
         session.add(booking)
