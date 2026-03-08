@@ -10,8 +10,8 @@ User=openclaw
 WorkingDirectory=/opt/openclaw-travel-agent
 EnvironmentFile=/opt/openclaw-travel-agent/.env
 
-# Start the bot
-ExecStart=/opt/openclaw-travel-agent/venv/bin/python -m bot.telegram_bot
+# Start the bot AND Webhook API together
+ExecStart=/bin/bash /opt/openclaw-travel-agent/scripts/start_prod.sh
 
 # Restart policy
 Restart=always

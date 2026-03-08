@@ -79,6 +79,10 @@ async def create_booking(
         await _persist_to_db(order)
     except Exception as e:
         logger.warning(f"[BookingManager] DB persist failed (using in-memory): {e}")
+        # Memory Leak Protection: Limit in-memory cache to 1000 items
+        if len(_in_memory_bookings) >= 1000:
+             oldest_key = next(iter(_in_memory_bookings))
+             del _in_memory_bookings[oldest_key]
         _in_memory_bookings[booking_id] = order
 
     logger.info(f"[BookingManager] Created booking {booking_id} for user {user_id}")
