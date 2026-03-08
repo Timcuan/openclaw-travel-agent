@@ -66,10 +66,13 @@ async def create_booking(
     from services.payment_gateway import create_payment_link
     try:
         payment_url = await create_payment_link(booking_id, price, payment_method)
-        order["payment_url"] = payment_url
+        if payment_url:
+            order["payment_url"] = payment_url
+        else:
+            order["status"] = "payment_failed"
     except Exception as e:
         logger.error(f"[BookingManager] Failed to create payment link: {e}")
-        payment_url = None
+        order["status"] = "payment_failed"
 
     # DB persistence (async, non-blocking – skip if DB unavailable)
     try:
@@ -114,17 +117,24 @@ def format_order_confirmation(order: dict) -> str:
     
     link_line = f"\n🔗 *Bayar Sekarang:* [Klik di sini]({payment_url})\n" if payment_url else ""
 
+    if order.get("status") == "payment_failed":
+        return (
+            "⚠️ *Maaf, terjadi kesalahan pada Payment Gateway.*\n\n"
+            f"📋 Order ID: `{booking_id}`\n"
+            "Pesanan Anda tidak dapat dilanjutkan saat ini.\n"
+            "Silakan ulangi pesanan Anda dalam beberapa saat lagi."
+        )
+
     return (
         "🎉 *Pesanan Berhasil Dibuat!*\n\n"
         f"📋 Order ID: `{booking_id}`\n"
         f"{offer_line}\n"
-        f"👤 Nama: *{name}*\n"
+        f"👤 Nama: *{order.get('passenger_name', '?')}*\n"
         f"💳 Pembayaran: *{payment}*\n"
         f"💰 Total: *{price_str}*\n"
         f"{link_line}\n"
-        "⏳ Selesaikan pembayaran dalam *30 menit*.\n"
-        "_(Simulasi: Sistem akan otomatis mengkonfirmasi pembayaran ini dalam 10 detik)_ \n\n"
-        "E-Ticket akan dikirim setelah pembayaran dikonfirmasi. 🙏\n"
+        "⏳ Selesaikan pembayaran dalam *30 menit*.\n\n"
+        "E-Ticket otomatis akan dikirim ke sini segera setelah Midtrans mengkonfirmasi pembayaran Anda. 🙏\n"
         "_Ketik pencarian baru untuk mulai lagi._"
     )
 

@@ -25,10 +25,10 @@ class MidtransWebhookPayload(BaseModel):
     signature_key: str
     payment_type: str
     order_id: str
-    merchant_id: str
     gross_amount: str
-    fraud_status: str
-    currency: str
+    merchant_id: Optional[str] = None
+    fraud_status: Optional[str] = None
+    currency: Optional[str] = "IDR"
     
     # We allow extra fields since midtrans sends bank_ids etc.
     model_config = ConfigDict(extra="allow")

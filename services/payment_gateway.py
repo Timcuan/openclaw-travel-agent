@@ -60,6 +60,9 @@ async def create_payment_link(booking_id: str, amount: float, method: str) -> st
             else:
                 logger.error(f"[PaymentGateway] Midtrans API Error {resp.status_code}: {data}")
                 return ""
+    except httpx.RequestError as e:
+        logger.error(f"[PaymentGateway] HTTP Connection to Midtrans failed: {e}")
+        return ""
     except Exception as e:
-        logger.error(f"[PaymentGateway] Connection to Midtrans failed: {e}")
+        logger.error(f"[PaymentGateway] Unexpected error connecting to Midtrans: {e}")
         return ""
