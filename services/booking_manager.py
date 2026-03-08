@@ -115,7 +115,11 @@ def format_order_confirmation(order: dict) -> str:
 
     offer_line = _offer_one_liner(travel_type, offer)
     
-    link_line = f"\n🔗 *Bayar Sekarang:* [Klik di sini]({payment_url})\n" if payment_url else ""
+    link_line = f"\n🔗 *Bayar Sekarang:* [Buka Midtrans]({payment_url})\n" if payment_url else ""
+    
+    # Generate QR Code image link representing the payment_url for PC users to scan
+    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={payment_url}"
+    qr_line = f"[Scan Barcode]({qr_url}) (Untuk Pengguna PC/Desktop)\n" if payment_url else ""
 
     if order.get("status") == "payment_failed":
         return (
@@ -132,7 +136,8 @@ def format_order_confirmation(order: dict) -> str:
         f"👤 Nama: *{order.get('passenger_name', '?')}*\n"
         f"💳 Pembayaran: *{payment}*\n"
         f"💰 Total: *{price_str}*\n"
-        f"{link_line}\n"
+        f"{link_line}"
+        f"{qr_line}"
         "⏳ Selesaikan pembayaran dalam *30 menit*.\n\n"
         "E-Ticket otomatis akan dikirim ke sini segera setelah Midtrans mengkonfirmasi pembayaran Anda. 🙏\n"
         "_Ketik pencarian baru untuk mulai lagi._"
