@@ -102,20 +102,27 @@ WhatsApp: handled natively by OpenClaw (stub kept for compatibility)
 | ✈️ Flight | Amadeus + Kiwi + Skyscanner |
 | 🏨 Hotel | LiteAPI + Booking.com + Agoda |
 | 🤖 AI | Groq `llama-3.3-70b-versatile` + rule-based fallback |
-| 🔌 OpenClaw | Native skill at `~/.openclaw/skills/indonesia-travel/` |
-| 📱 Telegram | Always-on via watchdog / systemd / Docker |
+| � Payment | **Live Midtrans SNAP Integration** (QRIS, VA, GoPay) + Secure Signature Webhook |
+| �🔌 OpenClaw | Native skill at `~/.openclaw/skills/indonesia-travel/` |
+| 📱 Telegram | E-Ticket direct dispatch + Always-on watchdogs |
 | 💾 Cache | Redis (10 min TTL) + in-memory fallback |
-| 🔁 Resilient | All providers fail-safe; works without Redis or API keys |
+| 🔁 Resilient | Postgres transactions locking, HTTPX fallbacks, Idempotent ticket webhooks |
 
 ---
 
 ## Environment Variables
 
-See `.env.example`. Minimum required:
+See `.env.example` for all configurable variables. Minimum required to go live:
 ```bash
 GROQ_API_KEY=gsk_...          # Groq LLM (free tier available)
 TELEGRAM_BOT_TOKEN=123:ABC... # From @BotFather
+
+# MIDTRANS LIVE PAYMENT (See Midtrans Dashboard -> Settings -> Access Keys)
+MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxxx
+MIDTRANS_IS_PRODUCTION=false
 ```
+
+> **Webhook configuration for Midtrans:** Make sure you set your Midtrans Payment Notification URL to `https://<YOUR-DOMAIN>/payment/webhook` so the bot can issue tickets securely.
 
 ---
 
