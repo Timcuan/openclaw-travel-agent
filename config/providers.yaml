@@ -1,0 +1,59 @@
+# OpenClaw Travel Agent – Provider Configuration
+# Copy this file to config/providers.yaml and fill in your API keys.
+# Set enabled: false to skip a provider entirely.
+#
+# Priority: lower number = higher priority when merging results.
+
+train:
+  kai:
+    enabled: true
+    priority: 1
+    base_url: "https://booking.kai.id"
+    # KAI uses Playwright scraping – no API key required
+
+  tiket:
+    enabled: true
+    priority: 2
+    api_key: ""          # Your Tiket.com API key
+    base_url: "https://api.tiket.com"
+
+  traveloka:
+    enabled: true
+    priority: 3
+    api_key: ""          # Your Traveloka API key
+
+flight:
+  amadeus:
+    enabled: true
+    priority: 1
+    client_id: ""        # Amadeus client ID
+    client_secret: ""    # Amadeus client secret
+    base_url: "https://test.api.amadeus.com"  # change to prod for live
+
+  kiwi:
+    enabled: true
+    priority: 2
+    api_key: ""          # Kiwi Tequila API key
+
+  skyscanner:
+    enabled: true
+    priority: 3
+    api_key: ""          # Skyscanner Partners API key
+
+hotel:
+  liteapi:
+    enabled: true
+    priority: 1
+    api_key: ""          # LiteAPI key
+    base_url: "https://api.liteapi.travel/v3.0"
+
+  booking:
+    enabled: true
+    priority: 2
+    client_id: ""        # Booking.com affiliate client ID
+    client_secret: ""    # Booking.com affiliate client secret
+
+  agoda:
+    enabled: true
+    priority: 3
+    api_key: ""          # Agoda API key (uses scraping if blank)

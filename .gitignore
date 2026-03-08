@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.pyc
+
+# Virtual environments
+venv/
+ENV/
+env/
+.env/
+.venv/
+
+# Environment / secrets
+.env
+*.env.local
+*.env.production
+
+# Logs
+logs/
+*.log
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker
+*.override.yml
+
+# DB / data
+*.db
+*.sqlite3
+
+# Playwright
+playwright-report/
+test-results/
+
+# PID files
+*.pid
+/tmp/openclaw_bot.pid
+
+# Backup files from edit tools
+*.bak
+*.stub
