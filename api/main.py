@@ -167,30 +167,4 @@ async def telegram_webhook(request: Request):
         return {"ok": False}
 
 
-# ─── WhatsApp Webhook (deprecated – handled by OpenClaw natively) ──────────
 
-@app.get("/whatsapp/webhook", tags=["WhatsApp (deprecated)"])
-async def whatsapp_verify(
-    hub_mode: str = Query(None, alias="hub.mode"),
-    hub_verify_token: str = Query(None, alias="hub.verify_token"),
-    hub_challenge: str = Query(None, alias="hub.challenge"),
-):
-    """
-    WhatsApp webhook verification.
-    NOTE: WhatsApp is now handled natively by OpenClaw.
-    This endpoint is kept for backward compatibility only.
-    """
-    VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "openclaw_verify")
-    if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
-        return PlainTextResponse(hub_challenge or "")
-    raise HTTPException(status_code=403, detail="Verification failed")
-
-
-@app.post("/whatsapp/webhook", tags=["WhatsApp (deprecated)"])
-async def whatsapp_webhook(request: Request):
-    """
-    WhatsApp messages are now handled by OpenClaw natively.
-    This stub accepts payloads to prevent webhook errors but does not process them.
-    """
-    logger.info("[WhatsApp] Webhook received – WhatsApp is deprecated in favour of OpenClaw.")
-    return {"status": "ok", "note": "WhatsApp handled by OpenClaw. Use /openclaw/search instead."}

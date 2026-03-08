@@ -8,7 +8,7 @@ Steps:
   1. Groq API key
   2. Enable/configure providers
   3. Telegram bot token
-  4. WhatsApp webhook token
+  4. Provide Midtrans Server Key (for payments)
   5. Redis + PostgreSQL URLs
 
 File: scripts/setup.py
@@ -87,11 +87,10 @@ def main():
     config["TELEGRAM_BOT_TOKEN"] = prompt("Telegram bot token", secret=True)
     print()
 
-    # ── Step 4: WhatsApp ──────────────────────────────────────────────────
-    print("── 4/5  WhatsApp Cloud API ──────────────────────────────────")
-    config["WHATSAPP_TOKEN"] = prompt("WhatsApp access token (optional)", secret=True)
-    config["WHATSAPP_PHONE_ID"] = prompt("WhatsApp phone number ID", default="")
-    config["WHATSAPP_VERIFY_TOKEN"] = prompt("Webhook verify token", default="openclaw_verify")
+    # ── Step 4: Midtrans ──────────────────────────────────────────────────
+    print("── 4/4  Midtrans API (Payment Gateway) ─────────────────────")
+    config["MIDTRANS_SERVER_KEY"] = prompt("Midtrans Server Key (e.g., SB-Mid-server-...)", default="")
+    config["MIDTRANS_IS_PRODUCTION"] = prompt("Midtrans is production?", default="false")
     print()
 
     # ── Step 5: Infrastructure ────────────────────────────────────────────

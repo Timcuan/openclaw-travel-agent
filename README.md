@@ -89,7 +89,7 @@ OpenClaw:
                       ↓
               JSON response → OpenClaw formats reply
 
-WhatsApp: handled natively by OpenClaw (stub kept for compatibility)
+
 ```
 
 ---
